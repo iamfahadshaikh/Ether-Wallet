@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <title>Ether Wallet</title>
+    <script src="https://cdn.jsdelivr.net/npm/web3@1.5.0/dist/web3.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0/dist/css/bootstrap.min.css" crossorigin="anonymous">
+    <style>
+        body {
+            background-image: url('https://images.pexels.com/photos/281260/pexels-photo-281260.jpeg?cs=srgb&dl=pexels-francesco-ungaro-281260.jpg&fm=jpg');
+            background-size: cover;
+            background-repeat: no-repeat;
+            background-position: center center;
+            opacity: 0.9;
+            /* 30% transparency */
+        }
+    </style>
+
+
+
+</head>
+
+<body class="container">
+
+    <div class="container text-center">
+        <br>
+        <br>
+        <h1>AVF Ether Wallet</h1>
+        <p id="output"></p>
+
+        <div class="row justify-content-center">
+            <form class="col-md-6" onsubmit="event.preventDefault(); deposit();">
+                <h2>Deposit Ether</h2>
+                <div class="form-group">
+                    <label for="deposit-amount">Amount:</label>
+                    <input type="number" class="form-control" id="deposit-amount" step="0.0001" required>
+                </div>
+                <br>
+                <button type="submit" class="btn btn-secondary">Deposit</button>
+                <h3>Contract balance: <span id="contract-balance"></span> in gwei</h3>
+            </form>
+        </div>
+
+        <hr />
+
+        <div class="row justify-content-center">
+            <form class="col-md-6" onsubmit="event.preventDefault(); send();">
+                <h2>Send Ether</h2>
+                <div class="form-group">
+                    <label for="send-recipient">Recipient Address:</label>
+                    <input type="text" class="form-control" id="send-recipient" required>
+                </div>
+                <div class="form-group">
+                    <label for="send-amount">Amount:</label>
+                    <input type="number" class="form-control" id="send-amount" step="0.0001" required>
+                </div>
+                <br>
+                <button type="submit" class="btn btn-secondary">Send</button>
+            </form>
+        </div>
+
+        <hr />
+
+        <div class="row justify-content-center">
+            <form class="col-md-6" onsubmit="event.preventDefault(); withdraw();">
+                <h2>Withdraw Ether</h2>
+                <div class="form-group">
+                    <label for="withdraw-amount">Amount:</label>
+                    <input type="number" class="form-control" id="withdraw-amount" step="0.0001" required>
+                </div>
+                <br>
+                <button type="submit" class="btn btn-secondary">Withdraw</button>
+                <!-- <h3>Contract balance:<span id="contract-balance"></span> gwei</h3> -->
+            </form>
+        </div>
+    </div>
+    <hr>
+    <script>
+        const contractAddress = "0xa538F2A1838F3F271eaF94c3B5f765b408223093"; // Replace with your actual contract address
+        const abi = [{
+            "inputs": [],
+            "stateMutability": "nonpayable",
+            "type": "constructor"
+        }, {
+            "inputs": [],
+            "name": "depositcrypto",
+            "outputs": [],
+            "stateMutability": "payable",
+            "type": "function"
+        }, {
+            "inputs": [],
+            "name": "generateAddress",
+            "outputs": [{
+                "internalType": "address",
+                "name": "",
+                "type": "address"
+            }],
+            "stateMutability": "view",
+            "type": "function"
+        }, {
+            "inputs": [],
+            "name": "owner",
+            "outputs": [{
+                "internalType": "address",
+                "name": "",
+                "type": "address"
+            }],
+            "stateMutability": "view",
+            "type": "function"
+        }, {
+            "inputs": [{
+                "internalType": "address payable",
+                "name": "recipient",
+                "type": "address"
+            }],
+            "name": "sendEther",
+            "outputs": [],
+            "stateMutability": "payable",
+            "type": "function"
+        }, {
+            "inputs": [{
+                "internalType": "uint256",
+                "name": "_amt",
+                "type": "uint256"
+            }],
+            "name": "withdrawcrypto",
+            "outputs": [],
+            "stateMutability": "nonpayable",
+            "type": "function"
+        }];
+
+        const web3 = new Web3("http://localhost:7545"); // Replace with your actual local blockchain network URL
+        const myContract = new web3.eth.Contract(abi, contractAddress);
+        web3.eth.defaultAccount = "0x33270841a0E277A9aA75980f11cA8476bE877136"; // Replace with your actual Ethereum account address
+
+        // Call the generateAddress function and display the result in the output element
+        // myContract.methods.generateAddress().call()
+        //   .then((result) => {
+        //     document.getElementById("output").textContent = result;
+        //})
+        //.catch((error) => {
+        //  console.error(error);
+        //});
+
+        document.getElementById("output").textContent = "Current account: " + web3.eth.defaultAccount;
+
+        // Deposit ether to the contract
+        function deposit() {
+            const value = document.getElementById("deposit-amount").value;
+            myContract.methods.depositcrypto().send({
+                    from: web3.eth.defaultAccount,
+                    value: value
+
+                })
+                .then(() => {
+                    console.log("Deposit successful");
+                })
+                .catch((error) => {
+                    console.error(error);
+                });
+            web3.eth.getBalance(contractAddress, function(error, balance) {
+                if (!error) {
+                    console.log(balance);
+                    document.getElementById("contract-balance").innerText = balance;
+
+                }
+            });
+        }
+
+        // Send ether from the contract to a recipient
+        function send() {
+            const recipient = document.getElementById("send-recipient").value;
+            const amount = document.getElementById("send-amount").value;
+            myContract.methods.sendEther(recipient).send({
+                    from: web3.eth.defaultAccount,
+                    value: amount
+                })
+                .then(() => {
+                    console.log("Send successful");
+                })
+                .catch((error) => {
+                    console.error(error);
+                });
+        }
+
+        // Withdraw ether from the contract
+        function withdraw() {
+            const amount = document.getElementById("withdraw-amount").value;
+            myContract.methods.withdrawcrypto(amount).send({
+                    from: web3.eth.defaultAccount
+                })
+                .then(() => {
+                    console.log("Withdrawal successful");
+                })
+                .catch((error) => {
+                    console.error(error);
+                });
+            web3.eth.getBalance(contractAddress, function(error, balance) {
+                if (!error) {
+                    console.log(balance);
+                    document.getElementById("contract-balance").innerText = balance;
+                }
+            });
+        }
+    </script>
+</body>
+
+</html>
